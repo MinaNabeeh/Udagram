@@ -1,0 +1,49 @@
+This is my checklist for setting up Udagram web site on AWS:
+
+1. Create VPC:
+	- CidrBlock property
+
+2. Internet Gateway:
+	2.1) Internet Gateway Attachement (to connect VPC to InternetGateway):
+		- InternetGateway property
+		- Vpc property
+
+3. Public Subnets (2 of them where each is in different Availability Zones within VPC):
+	- Vpc property
+	- Availability Zone property
+	- CidrBlock property
+	3.1. NatGateway (for each Subnet):
+		3.1.2 Elastic IP:
+			- Depends On Internet Gateway Attachement
+			- Vpc
+		- Eastic IP AllocationId property
+		- Subnet property
+	3.2 Route Table Association (for each Subnet):
+		- Subnet property
+		- Route Table property
+		
+
+4. Private Subnets (2 of them where each is in different Availability Zones within VPC):
+	- Vpc property
+	- Availability Zone property
+	- CidrBlock property
+	4.1 Route Table Association (for each Subnet):
+		- Subnet property
+		- Route Table property
+
+
+5. Public Route Table (2 for each public subnet within VPC):
+	- Vpc property
+	5.1 Route:
+		- Depends On Internet Gateway Attachement
+		- Destination CidrBlock property
+		- Route Table property
+		- Internet Gateway property
+
+6. Private Route Table (2 for each public subnet within VPC):
+	- Vpc property
+	5.1 Route:
+		- Depends On Internet Gateway Attachement
+		- Destination CidrBlock property
+		- Route Table property
+		- NatGateway property
