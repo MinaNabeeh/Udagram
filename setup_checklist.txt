@@ -1,4 +1,4 @@
-This is my checklist for setting up Udagram web site on AWS:
+This is a checklist for setting up Udagram web site on AWS:
 
 1. Create VPC:
 	- CidrBlock property
@@ -31,7 +31,6 @@ This is my checklist for setting up Udagram web site on AWS:
 		- Subnet property
 		- Route Table property
 
-
 5. Public Route Table (2 for each public subnet within VPC):
 	- Vpc property
 	5.1 Route:
@@ -47,3 +46,38 @@ This is my checklist for setting up Udagram web site on AWS:
 		- Destination CidrBlock property
 		- Route Table property
 		- NatGateway property
+
+7. Auto-Scaling Group  (associate with private sub-nets):
+	- VPC Zones
+	7.1 Launch Configuration for web server
+		- User Data property
+		- Image Id property
+		- Instance type property
+		- Device name property
+		7.1.1 Security Group - for web server
+			- VPC
+			- Egress
+			- Ingress
+	7.2 Target Groups (Elastic Load Balancer Target Group) (see below)
+
+8. Elastic Load Balancer Target Group (associated with Auto-Scaling Group):
+	- VPC
+	- Health check properties
+	- Port property
+	- Protocol: HTTP property
+	8.1 Listener (ties together Listener with Load Balancer):
+		- Target Group property
+		- Load Balancer property (see below)
+	8.2 Listener Rule (ties together Listener with this Target Group):
+		- Listener property
+		- Target Group property		
+
+9. Load Balancer (associates with public subnets):
+	- Subnets property
+	9.1 Security Group property
+		- VPC
+		- Egress
+		- Ingress	
+
+
+
