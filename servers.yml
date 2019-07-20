@@ -1,5 +1,10 @@
 Description: >
-    Carlos Rivas / Udacity 2019
+    Chin Seah for Udacity DevOps Class
+    July 2019
+    This template depends on network infrastructure already created
+    to deploy Security groups for a Ubuntu lanch configuration,
+    Auto-Scaling group, Load Balancer, Target Group with Listener
+    and Listener Rule.
 
 Parameters:
     EnvironmentName:
@@ -52,15 +57,13 @@ Resources:
           UserData:
             Fn::Base64: !Sub |
               #!/bin/bash
-              apt-get update -y
-              apt-get install unzip awscli -y
-              apt-get install apache2 -y
-              systemctl start apache2.service
-              cd /var/www/html
-              aws s3 cp s3://udacity-demo-1/udacity.zip .
-              unzip -o udacity.zip
+              yum update -y
+              yum install -y httpd
+              systemctl start httpd
+              systemctl enable httpd
+              wget -P ../../var/www/html https://s3.console.aws.amazon.com/s3/buckets/udagramdevrepo/udagram-web/index.html
           ImageId: ami-005bdb005fb00e791
-          KeyName: that-one
+          KeyName: chin_aws_ec2
           SecurityGroups:
           - Ref: WebServerSecGroup
           InstanceType: t3.small
@@ -108,8 +111,8 @@ Resources:
           Conditions:
             - Field: path-pattern
               Values: [/]
-            ListernArn: !Ref 'Listener'
-            Priority: 1
+          ListenerArn: !Ref 'Listener'
+          Priority: 1
     WebAppTargetGroup:
         Type: AWS::ElasticLoadBalancingV2::TargetGroup
         Properties:
