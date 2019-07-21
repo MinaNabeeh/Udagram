@@ -1,10 +1,13 @@
 Description: >
-    Chin Seah for Udacity DevOps Class
+    Chin Seah for Udacity Cloud DevOps Engineer Class
     July 2019
     This template deploys a VPC, with a pair of public and private subnets
     across two Availability Zones. It deploys an Internet Gateway, with
     route on the public subnets. It deploys a pair of NAT Gateways (one 
-    and default routes for them in the private subnets.)
+    and default routes for them in the private subnets.) It deploys
+    Security groups for a Ubuntu launch configuration,
+    Auto-Scaling group, Load Balancer, Target Group with Listener
+    and Listener Rule.
 
 Parameters:
 
@@ -199,6 +202,118 @@ Resources:
             RouteTableId: !Ref PrivateRouteTable2
             SubnetId: !Ref PrivateSubnet2
 
+    LBSecGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            GroupDescription: Allow http to our load balancer
+            VpcId: !Ref VPC
+            SecurityGroupIngress: 
+            - IpProtocol: tcp
+              FromPort: 80
+              ToPort: 80
+              CidrIp: 0.0.0.0/0
+            SecurityGroupEgress: 
+            - IpProtocol: tcp
+              FromPort: 80
+              ToPort: 80
+              CidrIp: 0.0.0.0/0
+    WebServerSecGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            GroupDescription: Allow http to our hosts and SSH from local only
+            VpcId: !Ref VPC
+            SecurityGroupIngress: 
+            - IpProtocol: tcp
+              FromPort: 80
+              ToPort: 80
+              CidrIp: 0.0.0.0/0
+            - IpProtocol: tcp
+              FromPort: 22
+              ToPort: 22
+              CidrIp: 0.0.0.0/0
+            SecurityGroupEgress: 
+            - IpProtocol: tcp
+              FromPort: 0
+              ToPort: 65535
+              CidrIp: 0.0.0.0/0
+
+    WebAppTargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+          HealthCheckIntervalSeconds: 35
+          HealthCheckPath: /
+          HealthCheckProtocol: HTTP
+          HealthCheckTimeoutSeconds: 30
+          HealthyThresholdCount: 2
+          Port: 80
+          Protocol: HTTP
+          UnhealthyThresholdCount: 5
+          VpcId: !Ref VPC
+
+    WebAppLaunchConfig:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties:
+          UserData:
+            Fn::Base64: !Sub |
+              #!/bin/bash
+              apt-get update -y
+              apt-get install unzip awscli -y
+              apt-get install apache2 -y
+              wget -P /var/www/html https://s3.console.aws.amazon.com/s3/buckets/udagramdevrepo/udagram-web/index.html
+              ls /var/www/html
+              systemctl start apache2.service
+          ImageId: ami-07b4f3c02c7f83d59
+          SecurityGroups:
+          - Ref: WebServerSecGroup
+          InstanceType: t3.small
+          KeyName: chin_aws_ec2
+          BlockDeviceMappings:
+          - DeviceName: "/dev/sdk"
+            Ebs:
+              VolumeSize: '10'
+    WebAppGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+          VPCZoneIdentifier:
+          - Ref: "PrivateSubnet1"
+          - Ref: "PrivateSubnet2"
+          LaunchConfigurationName:
+            Ref: WebAppLaunchConfig
+          MaxSize: '5'
+          MinSize: '3'
+          TargetGroupARNs:
+          - Ref: WebAppTargetGroup
+    WebAppLB:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+          Subnets:
+          - Ref: "PublicSubnet1"
+          - Ref: "PublicSubnet2"
+          SecurityGroups:
+          - Ref: LBSecGroup
+    Listener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+          LoadBalancerArn: !Ref WebAppLB
+          Port: '80'
+          Protocol: HTTP
+          DefaultActions:
+          - Type: forward
+            TargetGroupArn: !Ref 'WebAppTargetGroup'
+          
+    ALBListenerRule:
+        Type: AWS::ElasticLoadBalancingV2::ListenerRule
+        Properties: 
+          Actions:
+           - Type: forward
+             TargetGroupArn: !Ref 'WebAppTargetGroup'
+          Conditions:
+            - Field: path-pattern
+              Values: [/]
+          ListenerArn: !Ref 'Listener'
+          Priority: 1
+
+
 Outputs:
 
     VPC: 
@@ -260,3 +375,9 @@ Outputs:
         Value: !Ref PrivateSubnet2
         Export:
           Name: !Sub ${EnvironmentName}-PRI2-SN
+
+    LoadBalancerDNS:
+        Description: A reference to the LoadBalancer DNS
+        Value: !Join [ "", [ "http://", !GetAtt WebAppLB.DNSName ] ]
+        Export:
+          Name: !Sub "${EnvironmentName}-LB-DNS"
