@@ -259,9 +259,12 @@ Resources:
               apt-get update -y
               apt-get install unzip awscli -y
               apt-get install apache2 -y
-              wget -P /var/www/html https://s3.console.aws.amazon.com/s3/buckets/udagramdevrepo/udagram-web/index.html
-              ls /var/www/html
               systemctl start apache2.service
+              cd /var/www/html
+              rm -f index.html
+              wget -P /var/www/html https://s3.console.aws.amazon.com/s3/buckets/udagramdevrepo/udagram-web/index.html
+              chown -R www-data:www-data .
+              ls -al
           ImageId: ami-07b4f3c02c7f83d59
           SecurityGroups:
           - Ref: WebServerSecGroup
