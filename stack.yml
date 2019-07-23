@@ -253,65 +253,28 @@ Resources:
     WebAppLaunchConfig:
         Type: AWS::AutoScaling::LaunchConfiguration
         Properties:
-            UserData:
+          UserData:
             Fn::Base64: !Sub |
-                #!/bin/bash
-                apt-get update -y
-                apt-get install unzip awscli -y
-                apt-get install apache2 -y
-                systemctl start apache2.service
-                cd /var/www/html
-                rm -f index.html
-                wget -P /var/www/html https://s3.console.aws.amazon.com/s3/buckets/udagramdevrepo/udagram-web/index.html
-                chown -R www-data:www-data .
-                ls -al
-            ImageId: ami-07b4f3c02c7f83d59
-            IamInstanceProfile:
-            Ref: ListS3BucketsInstanceProfile
-            SecurityGroups:
-            - Ref: WebServerSecGroup
-            InstanceType: t3.small
-            KeyName: chin_aws_ec2
-            LaunchConfigurationName: chinudagram
-            BlockDeviceMappings:
-            - DeviceName: "/dev/sdk"
+              #!/bin/bash
+              apt-get update -y
+              apt-get install unzip awscli -y
+              apt-get install apache2 -y
+              systemctl start apache2.service
+              cd ../../var/www/html
+              rm -f index.html
+              wget https://s3.us-west-2.amazonaws.com/cseah072219-udagram-repo/index.html
+              chown -R www-data:www-data .
+              ls -al
+              cat index.html
+          ImageId: ami-07b4f3c02c7f83d59
+          SecurityGroups:
+          - Ref: WebServerSecGroup
+          InstanceType: t3.small
+          KeyName: chin_aws_ec2
+          BlockDeviceMappings:
+          - DeviceName: "/dev/sdk"
             Ebs:
-                VolumeSize: '10'
-
-    ListS3BucketsInstanceProfile:
-        Type: AWS::IAM::InstanceProfile
-        Properties:
-        Path: "/"
-        Roles:
-        - Ref: ListS3BucketsRole
-
-    ListS3BucketsPolicy:
-        Type: AWS::IAM::Policy
-        Properties:
-        PolicyName: ListS3BucketsPolicy
-        PolicyDocument:
-            Statement:
-            - Effect: Allow
-              Action:
-              - s3:List*
-              Resource: "*"
-        Roles:
-        - Ref: ListS3BucketsRole
-
-    ListS3BucketsRole:
-        Type: AWS::IAM::Role
-        Properties:
-            AssumeRolePolicyDocument:
-                Version: '2012-10-17'
-                Statement:
-                - Effect: Allow
-                Principal:
-                    Service:
-                    - ec2.amazonaws.com
-                Action:
-                - sts:AssumeRole
-            Path: "/"
-
+              VolumeSize: '10'
     WebAppGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
         Properties:
@@ -320,11 +283,10 @@ Resources:
           - Ref: "PrivateSubnet2"
           LaunchConfigurationName:
             Ref: WebAppLaunchConfig
-          MaxSize: '4'
-          MinSize: '2'
+          MaxSize: '5'
+          MinSize: '3'
           TargetGroupARNs:
           - Ref: WebAppTargetGroup
-
     WebAppLB:
         Type: AWS::ElasticLoadBalancingV2::LoadBalancer
         Properties:
@@ -333,7 +295,6 @@ Resources:
           - Ref: "PublicSubnet2"
           SecurityGroups:
           - Ref: LBSecGroup
-
     Listener:
         Type: AWS::ElasticLoadBalancingV2::Listener
         Properties:
