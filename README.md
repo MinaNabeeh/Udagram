@@ -15,5 +15,8 @@ Udacity Cloud DevOps Engineer project to deploy a high-availability web app, Uda
    * ./create.sh udagramstack stack.yml stack-parameters.json
 3. Look for LoadBalancer public URL to access web app
 
+![LoadBalancer Outputs](https://github.com/chinhseah/Udagram/blob/master/CloudFormation_Outputs.png)
+
+![Udagram_app](https://github.com/chinhseah/Udagram/blob/master/Udagram_via_LB.png)
 ## Dependencies
 * AWS CLI
