@@ -270,7 +270,6 @@ Resources:
           SecurityGroups:
           - Ref: WebServerSecGroup
           InstanceType: t3.small
-          KeyName: chin_aws_ec2
           BlockDeviceMappings:
           - DeviceName: "/dev/sdk"
             Ebs:
